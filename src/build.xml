@@ -1,0 +1,154 @@
+<!-- An ANT build file for jcommon-serializer. -->
+
+<!-- Written by David Gilbert and modified for jcommon-serializer by Thomas Morgner. -->
+
+<!-- This script has been tested with Ant version 1.6.2. -->
+
+<!-- Several temporary directories are created while the script is -->
+<!-- running: "./build" and "./distribution".  -->
+
+<!-- A "./javadoc" directory will be created for the Javadoc -->
+<!-- HTML pages. -->
+
+<!-- The script should work for the distribution and also the CVS -->
+<!-- repository. -->
+
+<project name="jcommon-serializer" default="all" basedir=".">
+
+  <import file="ant/build-lib.xml"/>
+
+  <target name="initialise" description="Initialise required settings.">
+    <tstamp/>
+
+    <property name="builddir" value="build"/>
+    <property file="devresource/META-INF/MANIFEST.MF"/>
+    <property name="Release-Token" value=""/>
+    <property name="Implementation-Version" value="${Release-Major-Number}.${Release-Minor-Number}.${Release-Milestone-Number}${Release-Token}"/>
+    <property file="${user.home}/.build-pentaho-reporting-jcommon-serializer.properties"/>
+    <property file="build.properties"/>
+
+
+    <isClassAndFileAvailable class-name="org.apache.commons.logging.Log"
+                             property-name="lib.commons-logging.present"
+                             file-name="${project.libdir}/${dependency.release.core.commons-logging}"/>
+    <fail unless="lib.commons-logging.present"/>
+
+    <isClassAndFileAvailable class-name="org.pentaho.reporting.libraries.base.LibBaseInfo"
+                             property-name="lib.libbase.present"
+                             file-name="${project.libdir}/${dependency.release.core.libbase}">
+      <test-classpath>
+        <pathelement location="${project.libdir}/${dependency.release.core.commons-logging}"/>
+      </test-classpath>
+    </isClassAndFileAvailable>
+    <fail unless="lib.libbase.present"/>
+
+  </target>
+
+
+  <target name="compile-retro" depends="initialise"
+    description="Compile the Jcommon-Serializer source code using a custom JIKES setup.">
+
+    <build-retro target-jar="${build.target-dir}${release-jar-file}"
+                 source-dir="source"
+                 jdk-dir="${build.retro.jdk}">
+      <all-classpath>
+        <pathelement location="${project.libdir}/${dependency.release.core.libbase}"/>
+        <pathelement location="${project.libdir}/${dependency.release.core.commons-logging}"/>
+      </all-classpath>
+      <all-resources>
+        <include name="*.properties"/>
+        <include name="**/*.properties"/>
+      </all-resources>
+    </build-retro>
+  </target>
+
+
+  <target name="compile" depends="initialise"
+    description="Compile the Jcommon-Serializer source code.">
+
+    <build-all target-jar="${build.target-dir}${release-jar-file}"
+               source-dir="source">
+      <all-classpath>
+        <pathelement location="${project.libdir}/${dependency.release.core.libbase}"/>
+        <pathelement location="${project.libdir}/${dependency.release.core.commons-logging}"/>
+      </all-classpath>
+      <all-resources>
+        <include name="*.properties"/>
+        <include name="**/*.properties"/>
+      </all-resources>
+    </build-all>
+  </target>
+
+  <target name="javadoc" depends="initialise">
+    <delete dir="javadoc"/>
+    <mkdir dir="javadoc"/>
+    <javadoc destdir="javadoc"
+      windowtitle="Jcommon-Serializer Class Library (version ${impl.version})"
+      linksource="true">
+      <classpath>
+        <pathelement location="${project.libdir}/${dependency.release.core.libbase}"/>
+        <pathelement location="${project.libdir}/${dependency.release.core.commons-logging}"/>
+      </classpath>
+      <packageset dir="source" defaultexcludes="yes">
+        <include name="org/jfree/serializer"/>
+      </packageset>
+    </javadoc>
+  </target>
+
+  <target name="fill-dist-dir">
+    <!-- copy across README -->
+    <copy file="README.txt"
+      tofile="distribution/README.txt"/>
+
+    <!-- copy across the ChangeLog -->
+    <copy file="ChangeLog.txt"
+      tofile="distribution/ChangeLog.txt"/>
+
+    <!-- copy across LICENCE -->
+    <copy file="licence-LGPL.txt"
+      tofile="distribution/licence-LGPL.txt"/>
+
+    <!-- copy across runtime jar file -->
+    <copy file="${build.target-dir}${release-jar-file}" tofile="distribution/${release-jar-file}"/>
+
+    <!-- copy across source files -->
+    <copy todir="distribution/source">
+      <fileset dir="source"/>
+    </copy>
+
+    <!-- copy across source files -->
+    <copy todir="distribution/lib">
+      <fileset dir="lib"/>
+    </copy>
+
+    <!-- copy across ant build file (this file) -->
+    <copy file="build.xml"
+      tofile="distribution/build.xml"/>
+    <copy file="ant/build-lib.xml"
+      tofile="distribution/ant/build-lib.xml"/>
+
+    <copy file="build.properties"
+      tofile="distribution/build.properties"/>
+
+  </target>
+
+  <target name="zip" depends="compile">
+    <description>
+      Make .zip distribution for JCommon-Serializer
+    </description>
+    <make-zip lib.version="${impl.version}" lib.name="${impl.name}" target-dir="${build.target-dir}"/>
+  </target>
+
+  <target name="targz" depends="compile">
+    <description>
+      Make .tar.gz distribution for JCommon-Serializer
+    </description>
+    <make-targz lib.version="${impl.version}" lib.name="${impl.name}" target-dir="${build.target-dir}"/>
+  </target>
+
+  <target name="all"
+    depends="compile,zip,targz"
+    description="Compiles JCommon-Serializer, builds the jar files and creates distribution files (.zip and .tar.gz).">
+  </target>
+
+</project>
